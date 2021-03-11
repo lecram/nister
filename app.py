@@ -83,7 +83,7 @@ def user_pass(name):
     return dict(user=user, suser=suser)
 
 @route('/users/<_id:int>/pass', method='POST')
-def post_user_padd(_id):
+def post_user_pass(_id):
     user = User.get_by_id(_id)
     suser = get_session_user()
     if None in (suser, user):
