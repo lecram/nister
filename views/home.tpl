@@ -13,9 +13,9 @@
   <h1 class="centered">Labs</h1>
   <ul>
 % for lab in labs:
-    <li><a href="/lab/{{lab.name}}">{{lab.desc}}</a></li>
+    <li><a href="/labs/{{lab.name}}">{{lab.desc}}</a></li>
 % end
   </ul>
-  <p><a href="/new-lab">New Lab</a></p>
+  <p><a href="/labs//new">New Lab</a></p>
 </body>
 </html>

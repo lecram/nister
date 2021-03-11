@@ -32,6 +32,11 @@ class User(BaseModel):
         pw_hash = dk.hex()
         return pw_hash == self.pw_hash
 
+    def new_lab(self, name, desc, color):
+        lab = Lab.create(name=name, desc=desc, color=color)
+        Access.create(lab=lab, user=self, role='C')
+        return lab
+
 class Session(BaseModel):
     key = UUIDField(unique=True)
     user = ForeignKeyField(User, backref="sessions")
@@ -40,7 +45,13 @@ class Session(BaseModel):
 class Lab(BaseModel):
     name = CharField(max_length=32, unique=True)
     desc = CharField(max_length=128)
-    color = IntegerField() # 24-bit RGB
+    color = CharField(max_length=7) # "#RRGGBB"
+
+    def membership(self, user):
+        access = Access.get_or_none(Access.lab == self & Access.user == user)
+        if access is None:
+            return 'N'
+        return access.role
 
 class Access(BaseModel):
     lab = ForeignKeyField(Lab, backref="permissions")
@@ -104,7 +115,7 @@ def login(username, password):
     key = str(uuid.uuid4())
     return Session.create(key=key, user=user, start=datetime.datetime.now())
 
-all_tables = [User, Session, Lab, Project, Issue, Comment]
+all_tables = [User, Session, Lab, Access, Project, Issue, Comment]
 
 def create_tables():
     db.create_tables(all_tables)

@@ -34,7 +34,7 @@ def server_static(filepath):
 @view('home')
 def home():
     suser = get_session_user()
-    return dict(suser=suser, labs=[])
+    return dict(suser=suser, labs=Lab.select())
 
 @route('/login')
 @view('login')
@@ -143,5 +143,45 @@ def post_user_upd(_id):
     user.isadmin = request.forms.admin == "yes"
     user.save()
     redirect('/users')
+
+@route('/labs//new')
+@view('lab_edit')
+def lab_new():
+    suser = get_session_user()
+    if not suser:
+        redirect('/')
+    return dict(lab=None, suser=suser)
+
+@route('/lab/<name>/edit')
+@view('lab_edit')
+def lab_edit(name):
+    suser = get_session_user()
+    lab = Lab.get_or_none(Lab.name == name)
+    if lab.membership(suser) != 'C':
+        redirect('/')
+    return dict(lab=lab, suser=suser)
+
+@route('/labs//new', method='POST')
+def post_lab_new():
+    suser = get_session_user()
+    if not suser:
+        redirect('/')
+    name = request.forms.name
+    desc = request.forms.desc
+    color = request.forms.color
+    suser.new_lab(name, desc, color)
+    redirect('/')
+
+@route('/labs/<_id:int>/edit', method='POST')
+def post_lab_upd(_id):
+    suser = get_session_user()
+    lab = Lab.get_by_id(_id)
+    if lab.membership(suser) != 'C':
+        redirect('/')
+    lab.name = request.forms.name
+    lab.desc = request.forms.desc
+    lab.color = request.forms.color
+    lab.save()
+    redirect('/')
 
 run(host='localhost', port=8080)
