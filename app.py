@@ -13,6 +13,10 @@ def get_session():
     key = request.cookies.get('key', "")
     return Session.get_or_none(Session.key == key)
 
+def get_session_user():
+    session = get_session()
+    return session and session.user
+
 @hook('before_request')
 def _connect_db():
     db.connect()
@@ -29,8 +33,7 @@ def server_static(filepath):
 @route('/')
 @view('home')
 def home():
-    session = get_session()
-    suser = getattr(session, "user", None)
+    suser = get_session_user()
     return dict(suser=suser, labs=[])
 
 @route('/login')
@@ -63,29 +66,29 @@ def logout():
 @route('/users')
 @view('users')
 def show_users():
-    session = get_session()
-    if not session or not session.user.isadmin:
+    suser = get_session_user()
+    if not suser or not suser.isadmin:
         redirect('/')
-    return dict(users=User.select(), suser=session.user)
+    return dict(users=User.select(), suser=suser)
 
 @route('/user/pass/<name>')
 @view('user_pass')
 def user_pass(name):
     user = User.get_or_none(User.username == name)
-    session = get_session()
-    if None in (session, user):
+    suser = get_session_user()
+    if None in (suser, user):
         redirect('/users')
-    if user != session.user and not session.user.isadmin:
+    if user != suser and not suser.isadmin:
         redirect('/users')
-    return dict(user=user, suser=session.user)
+    return dict(user=user, suser=suser)
 
 @route('/user_pass/<_id:int>', method='POST')
 def post_user_padd(_id):
     user = User.get_by_id(_id)
-    session = get_session()
-    if None in (session, user):
+    suser = get_session_user()
+    if None in (suser, user):
         redirect('/users')
-    if user != session.user and not session.user.isadmin:
+    if user != suser and not suser.isadmin:
         redirect('/users')
     oldpass = request.forms.oldpass
     newpass = request.forms.newpass
@@ -102,26 +105,26 @@ def post_user_padd(_id):
 @route('/user/new')
 @view('user_edit')
 def user_new():
-    session = get_session()
-    if not session or not session.user.isadmin:
+    suser = get_session_user()
+    if not suser or not suser.isadmin:
         redirect('/')
-    return dict(user=None, suser=session.user)
+    return dict(user=None, suser=suser)
 
 @route('/user/edit/<name>')
 @view('user_edit')
 def user_edit(name):
-    session = get_session()
-    if not session or not session.user.isadmin:
+    suser = get_session_user()
+    if not suser or not suser.isadmin:
         redirect('/')
     user = User.get_or_none(User.username == name)
     if user is None:
         redirect('/')
-    return dict(user=user, suser=session.user)
+    return dict(user=user, suser=suser)
 
 @route('/user_new', method='POST')
 def post_user_new():
-    session = get_session()
-    if not session or not session.user.isadmin:
+    suser = get_session_user()
+    if not suser or not suser.isadmin:
         redirect('/')
     uname = request.forms.uname
     rname = request.forms.rname
@@ -131,8 +134,8 @@ def post_user_new():
 
 @route('/user_upd/<_id:int>', method='POST')
 def post_user_upd(_id):
-    session = get_session()
-    if not session or not session.user.isadmin:
+    suser = get_session_user()
+    if not suser or not suser.isadmin:
         redirect('/')
     user = User.get_by_id(_id)
     user.username = request.forms.uname
