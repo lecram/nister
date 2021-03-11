@@ -111,7 +111,7 @@ def create_tables():
 
 def init_users():
     password = getpass.getpass("Admin Password: ")
-    root = new_user("admin", "Admin", password, True)
+    root = new_user("admin", "Administrator", password, True)
 
 if __name__ == "__main__":
     try:
