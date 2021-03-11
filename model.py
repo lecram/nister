@@ -8,6 +8,7 @@ import datetime
 from peewee import *
 
 D = datetime.date
+DT = datetime.datetime
 
 DB_PATH = "nister.db"
 db = SqliteDatabase(DB_PATH)
@@ -37,6 +38,24 @@ class User(BaseModel):
         Access.create(lab=lab, user=self, role='C')
         return lab
 
+    def new_project(self, lab, name, goal):
+        return Project.create(
+            lab=lab, name=name, goal=goal, creator=self, start=D.today()
+        )
+
+    def new_issue(self, proj, title, desc):
+        num = proj.last_issue().num + 1
+        return Issue.create(
+            proj=proj, num=num, creator=self,
+            start=DT.now(), title=title, desc=desc
+        )
+
+    def new_comment(self, issue, desc):
+        num = issue.last_comment().num + 1
+        return Comment.create(
+            issue=issue, num=num, user=self, time=DT.now(), desc=desc
+        )
+
 class Session(BaseModel):
     key = UUIDField(unique=True)
     user = ForeignKeyField(User, backref="sessions")
@@ -62,20 +81,33 @@ class Project(BaseModel):
     lab = ForeignKeyField(Lab, backref="projects")
     name = CharField(max_length=32, unique=True)
     goal = CharField(max_length=128)
+    creator = ForeignKeyField(User, backref="created_projects")
     start = DateField()
+
+    def last_issue(self):
+        return self.issues.order_by(Issue.num.desc()).first()
 
 class Issue(BaseModel):
     proj = ForeignKeyField(Project, backref="issues")
     num = IntegerField()
+    creator = ForeignKeyField(User, backref="created_issues")
+    closer = ForeignKeyField(User, backref="closed_issues")
     start = DateTimeField()
-    state = CharField(max_length=1) # [O]pen/[C]losed
+    end = DateTimeField()
     title = CharField(max_length=128)
     desc = TextField()
+
+    def is_open(self):
+        return self.end is None
+
+    def last_comment(self):
+        return self.comments.order_by(Comment.num.desc()).first()
 
 class Comment(BaseModel):
     issue = ForeignKeyField(Issue, backref="comments")
     num = IntegerField()
-    start = DateTimeField()
+    user = ForeignKeyField(User, backref="comments")
+    time = DateTimeField()
     desc = TextField()
 
 def is_foreign_key(field):
