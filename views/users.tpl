@@ -25,14 +25,14 @@
           <td>{{user.realname}}</td>
           <td>{{"Yes" if user.isadmin else "No"}}</td>
           <td>
-            <a href="{{'/user/edit/{}'.format(user.username)}}">Edit</a>
-            <a href="{{'/user/pass/{}'.format(user.username)}}">Password</a>
+            <a href="{{'/users/{}/edit'.format(user.username)}}">Edit</a>
+            <a href="{{'/users/{}/pass'.format(user.username)}}">Password</a>
           </td>
         </tr>
 % end
       </tbody>
     </table>
-    <p><a href="/user/new">New User</a></p>
+    <p><a href="/users//new">New User</a></p>
   </div>
 </body>
 </html>

@@ -25,9 +25,9 @@ check = lambda x: "checked" if x else ""
 % include("top_bar", user=suser)
   <h1 class="centered">Edit</h1>
 % if user is None:
-  <form action="/user_new" method="post">
+  <form action="/users//new" method="post">
 % else:
-  <form action="/user_upd/{{user.id}}" method="post">
+  <form action="/users/{{user.id}}/edit" method="post">
 % end
     <table class="field-list">
       <tbody>

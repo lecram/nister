@@ -71,7 +71,7 @@ def show_users():
         redirect('/')
     return dict(users=User.select(), suser=suser)
 
-@route('/user/pass/<name>')
+@route('/users/<name>/pass')
 @view('user_pass')
 def user_pass(name):
     user = User.get_or_none(User.username == name)
@@ -82,7 +82,7 @@ def user_pass(name):
         redirect('/users')
     return dict(user=user, suser=suser)
 
-@route('/user_pass/<_id:int>', method='POST')
+@route('/users/<_id:int>/pass', method='POST')
 def post_user_padd(_id):
     user = User.get_by_id(_id)
     suser = get_session_user()
@@ -93,16 +93,16 @@ def post_user_padd(_id):
     oldpass = request.forms.oldpass
     newpass = request.forms.newpass
     if request.forms.newpassconfirm != newpass:
-        redirect('/user/pass/{}'.format(user.username))
+        redirect('/users/{}/pass'.format(user.username))
     if not user.test_password(oldpass):
-        redirect('/user/pass/{}'.format(user.username))
+        redirect('/users/{}/pass'.format(user.username))
     pw_hash, pw_salt = hash_password(newpass)
     user.pw_hash = pw_hash
     user.pw_salt = pw_salt
     user.save()
     redirect('/users')
 
-@route('/user/new')
+@route('/users//new')
 @view('user_edit')
 def user_new():
     suser = get_session_user()
@@ -110,7 +110,7 @@ def user_new():
         redirect('/')
     return dict(user=None, suser=suser)
 
-@route('/user/edit/<name>')
+@route('/users/<name>/edit')
 @view('user_edit')
 def user_edit(name):
     suser = get_session_user()
@@ -121,7 +121,7 @@ def user_edit(name):
         redirect('/')
     return dict(user=user, suser=suser)
 
-@route('/user_new', method='POST')
+@route('/users//new', method='POST')
 def post_user_new():
     suser = get_session_user()
     if not suser or not suser.isadmin:
@@ -132,7 +132,7 @@ def post_user_new():
     new_user(uname, rname, "", isadmin)
     redirect('/users')
 
-@route('/user_upd/<_id:int>', method='POST')
+@route('/users/<_id:int>/edit', method='POST')
 def post_user_upd(_id):
     suser = get_session_user()
     if not suser or not suser.isadmin:

@@ -11,7 +11,7 @@
 <body>
 % include("top_bar", user=suser)
   <h1 class="centered">Change Password</h1>
-  <form action="/user_pass/{{user.id}}" method="post">
+  <form action="/users/{{user.id}}/pass" method="post">
     <table class="field-list">
       <tbody>
         <tr>
