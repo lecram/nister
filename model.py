@@ -40,7 +40,7 @@ class User(BaseModel):
 
     def new_project(self, lab, name, goal):
         return Project.create(
-            lab=lab, name=name, goal=goal, creator=self, start=D.today()
+            lab=lab, name=name, goal=goal, creator=self, start=DT.now()
         )
 
     def new_issue(self, proj, title, desc):
@@ -82,7 +82,7 @@ class Project(BaseModel):
     name = CharField(max_length=32, unique=True)
     goal = CharField(max_length=128)
     creator = ForeignKeyField(User, backref="created_projects")
-    start = DateField()
+    start = DateTimeField()
 
     def last_issue(self):
         return self.issues.order_by(Issue.num.desc()).first()
@@ -146,6 +146,26 @@ def login(username, password):
     clean_old_sessions()
     key = str(uuid.uuid4())
     return Session.create(key=key, user=user, start=datetime.datetime.now())
+
+def get_last_events(limit=-1):
+    projs = Project.select().order_by(Project.start.desc())
+    iopens = Issue.select().order_by(Issue.start.desc())
+    closes = Issue.select().order_by(Issue.end.desc())
+    comms = Comment.select().order_by(Comment.time.desc())
+    if limit > 0:
+        projs = projs.limit(limit)
+        iopens = iopens.limit(limit)
+        closes = closes.limit(limit)
+        comms = comms.limit(limit)
+    events = []
+    events += [(proj.start, proj) for proj in projs]
+    events += [(iopen.start, iopen) for iopen in iopens]
+    events += [(close.end, close) for close in closes]
+    events += [(comm.time, comm) for comm in comms]
+    events.sort(key=lambda ev: ev[0], reverse=True)
+    if limit > 0:
+        events = events[:limit]
+    return events
 
 all_tables = [User, Session, Lab, Access, Project, Issue, Comment]
 

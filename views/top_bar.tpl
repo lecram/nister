@@ -1,5 +1,6 @@
   <div id="nav-bar">
     <a href="/">Home</a>
+    <a href="/labs">Labs</a>
 % if user is not None and user.isadmin:
     <a href="/users">Users</a>
 % end

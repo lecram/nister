@@ -9,6 +9,41 @@ md_extras = ("break-on-newline code-friendly fenced-code-blocks "
 def render(md):
     return markdown2.markdown(md, extras=md_extras)
 
+def link(url, text, title=""):
+    if title:
+        return '<a href="{}" title="{}">{}</a>'.format(url, title, text)
+    else:
+        return '<a href="{}">{}</a>'.format(url, text)
+
+def render_event(dt, obj):
+    if isinstance(obj, Project):
+        url = "/projs/{}".format(obj.name)
+        user = obj.creator
+        verb = "created"
+    elif isinstance(obj, Issue):
+        proj = obj.proj
+        lab = proj.lab
+        url_fmt = "/labs/{}/projects/{}/issues/{}"
+        url = url_fmt.format(lab.name, proj.name, obj.num)
+        if obj.is_open():
+            user = obj.creator
+            verb = "opened"
+        else:
+            user = obj.closer
+            verb = "closed"
+    elif isinstance(obj, Comment):
+        issue = obj.issue
+        proj = issue.proj
+        lab = proj.lab
+        url_fmt = "/labs/{}/projects/{}/issues/{}/comments/{}"
+        url = url_fmt.format(lab.name, proj.name, issue.num, obj.num)
+        user = obj.user
+        verb = "posted"
+    u_link = link("/users/{}".user.username, user.realname)
+    o_link = link(url, url)
+    timestamp = dt.isoformat(' ', 'minutes')
+    return "{} - {} {} {}".format(timestamp, u_link, verb, o_link)
+
 def get_session():
     key = request.cookies.get('key', "")
     return Session.get_or_none(Session.key == key)
@@ -34,7 +69,9 @@ def server_static(filepath):
 @view('home')
 def home():
     suser = get_session_user()
-    return dict(suser=suser, labs=Lab.select())
+    events = get_last_events(100)
+    html_events = [render_event(*ev) for ev in events]
+    return dict(suser=suser, html_events=html_events)
 
 @route('/login')
 @view('login')
@@ -143,6 +180,12 @@ def post_user_upd(_id):
     user.isadmin = request.forms.admin == "yes"
     user.save()
     redirect('/users')
+
+@route('/labs')
+@view('labs')
+def home():
+    suser = get_session_user()
+    return dict(suser=suser, labs=Lab.select())
 
 @route('/labs//new')
 @view('lab_edit')

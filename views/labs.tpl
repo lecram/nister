@@ -1,20 +1,21 @@
 <%
-# html_events: list of events rendered as HTML
+# labs: list of labs
 %>
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Nister</title>
+  <title>Labs</title>
   <link href="/static/style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 % include("top_bar", user=suser)
-  <h1 class="centered">Last Events</h1>
+  <h1 class="centered">Labs</h1>
   <ul>
-% for html_event in html_events:
-    <li>{{!html_event}}</li>
+% for lab in labs:
+    <li><a href="/labs/{{lab.name}}">{{lab.desc}}</a></li>
 % end
   </ul>
+  <p><a href="/labs//new">New Lab</a></p>
 </body>
 </html>
