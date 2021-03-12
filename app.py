@@ -88,7 +88,7 @@ def try_to_login():
     password = request.forms.password
     session = login(username, password)
     if session is not None:
-        ts = datetime.datetime.now() + SESSION_MAX_AGE
+        ts = DT.now() + SESSION_MAX_AGE
         response.set_cookie('key', session.key, expires=ts)
     redirect('/login')
 
