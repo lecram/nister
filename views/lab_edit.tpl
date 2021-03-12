@@ -49,7 +49,7 @@ end
     </table>
     <br/><br/>
     <div class="button">
-      <button class="flat-button" type="button" onclick="window.location='/users';">Cancel</button>
+      <button class="flat-button" type="button" onclick="window.location='/labs';">Cancel</button>
       <button class="flat-button" type="submit">Save</button>
     </div>
   </form>
