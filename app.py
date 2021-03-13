@@ -25,7 +25,7 @@ def render_event(dt, obj):
         lab = proj.lab
         url_fmt = "/labs/{}/projects/{}/issues/{}"
         url = url_fmt.format(lab.name, proj.name, obj.num)
-        if obj.is_open():
+        if dt == obj.start:
             user = obj.creator
             verb = "opened"
         else:
@@ -65,13 +65,49 @@ def _close_db():
 def server_static(filepath):
     return static_file(filepath, root='./static/')
 
+# --- Feed ---
+
 @route('/')
-@view('home')
-def home():
+@view('feed')
+def user_feed():
     suser = get_session_user()
-    events = get_last_events(100)
+    if suser is None:
+        redirect('/login')
+    events = suser.last_events(100)
     html_events = [render_event(*ev) for ev in events]
-    return dict(suser=suser, html_events=html_events)
+    return dict(suser=suser, html_events=html_events, lab=None, proj=None)
+
+@route('/labs/<name>')
+@view('feed')
+def lab_feed(name):
+    suser = get_session_user()
+    if suser is None:
+        redirect('/login')
+    lab = Lab.get_or_none(Lab.name == name)
+    if lab is None or lab.membership(suser) == 'N':
+        redirect('/labs')
+    events = lab.last_events(100)
+    html_events = [render_event(*ev) for ev in events]
+    return dict(suser=suser, html_events=html_events, lab=lab, proj=None)
+
+@route('/labs/<lname>/projects/<pname>')
+@view('feed')
+def proj_feed(lname, pname):
+    suser = get_session_user()
+    if suser is None:
+        redirect('/login')
+    lab = Lab.get_or_none(Lab.name == lname)
+    if lab is None or lab.membership(suser) == 'N':
+        redirect('/labs')
+    query = lab.projects.where(Project.name == pname)
+    if query.count() == 0:
+        redirect('/labs/{}/projects'.format(lname))
+    proj = query.first()
+    events = proj.last_events(100)
+    html_events = [render_event(*ev) for ev in events]
+    return dict(suser=suser, html_events=html_events, lab=lab, proj=proj)
+
+# --- Login/Logout ---
 
 @route('/login')
 @view('login')
@@ -99,6 +135,8 @@ def logout():
         response.delete_cookie('key')
         session.delete_instance()
     redirect('/')
+
+# --- Users ---
 
 @route('/users')
 @view('users')
@@ -181,6 +219,8 @@ def post_user_upd(_id):
     user.save()
     redirect('/users')
 
+# --- Labs ---
+
 @route('/labs')
 @view('labs')
 def home():
@@ -195,13 +235,13 @@ def lab_new():
         redirect('/')
     return dict(lab=None, suser=suser)
 
-@route('/lab/<name>/edit')
+@route('/labs/<name>/edit')
 @view('lab_edit')
 def lab_edit(name):
     suser = get_session_user()
     lab = Lab.get_or_none(Lab.name == name)
-    if lab.membership(suser) != 'C':
-        redirect('/')
+    if None in (lab, suser) or lab.membership(suser) != 'C':
+        redirect('/labs')
     return dict(lab=lab, suser=suser)
 
 @route('/labs//new', method='POST')
@@ -226,5 +266,9 @@ def post_lab_upd(_id):
     lab.color = request.forms.color
     lab.save()
     redirect('/')
+
+# --- Projects ---
+
+# TODO
 
 run(host='localhost', port=8080)

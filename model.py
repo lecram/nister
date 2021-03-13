@@ -56,6 +56,17 @@ class User(BaseModel):
             issue=issue, num=num, user=self, time=DT.now(), desc=desc
         )
 
+    # all events visible to self (not just self's actions)
+    def last_events(self, limit=-1):
+        labs = [acc.lab for acc in Access.select().where(Access.user == self)]
+        events = []
+        for lab in labs:
+            events += lab.last_events(limit)
+        events.sort(key=lambda ev: ev[0], reverse=True)
+        if limit > 0:
+            events = events[:limit]
+        return events
+
 class Session(BaseModel):
     key = UUIDField(unique=True)
     user = ForeignKeyField(User, backref="sessions")
@@ -67,10 +78,19 @@ class Lab(BaseModel):
     color = CharField(max_length=7) # "#RRGGBB"
 
     def membership(self, user):
-        access = Access.get_or_none(Access.lab == self & Access.user == user)
+        access = Access.get_or_none((Access.lab == self) & (Access.user == user))
         if access is None:
             return 'N'
         return access.role
+
+    def last_events(self, limit=-1):
+        events = []
+        for proj in self.projects:
+            events += proj.last_events(limit)
+        events.sort(key=lambda ev: ev[0], reverse=True)
+        if limit > 0:
+            events = events[:limit]
+        return events
 
 class Access(BaseModel):
     lab = ForeignKeyField(Lab, backref="permissions")
@@ -87,6 +107,15 @@ class Project(BaseModel):
     def last_issue(self):
         return self.issues.order_by(Issue.num.desc()).first()
 
+    def last_events(self, limit=-1):
+        events = [(self.start, self)]
+        for issue in self.issues:
+            events += issue.last_events(limit)
+        events.sort(key=lambda ev: ev[0], reverse=True)
+        if limit > 0:
+            events = events[:limit]
+        return events
+
 class Issue(BaseModel):
     proj = ForeignKeyField(Project, backref="issues")
     num = IntegerField()
@@ -102,6 +131,17 @@ class Issue(BaseModel):
 
     def last_comment(self):
         return self.comments.order_by(Comment.num.desc()).first()
+
+    def last_events(self, limit=-1):
+        comms = self.comments.order_by(Comment.time.desc())
+        if limit > 0:
+            comms = comms.limit(limit)
+        events = [(self.start, self), (self.end, self)]
+        events += [(comm.time, comm) for comm in comms]
+        events.sort(key=lambda ev: ev[0], reverse=True)
+        if limit > 0:
+            events = events[:limit]
+        return events
 
 class Comment(BaseModel):
     issue = ForeignKeyField(Issue, backref="comments")
